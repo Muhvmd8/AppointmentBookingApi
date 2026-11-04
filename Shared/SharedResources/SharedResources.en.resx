@@ -1,0 +1,276 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AnErrorOccured" xml:space="preserve">
+    <value>An error occured</value>
+  </data>
+  <data name="EmailAlreadyInUse" xml:space="preserve">
+    <value>This email is assigned to another account</value>
+  </data>
+  <data name="InvalidEmail" xml:space="preserve">
+    <value>Enter a valid email</value>
+  </data>
+  <data name="InvalidPagination" xml:space="preserve">
+    <value>Pagination values should be positive</value>
+  </data>
+  <data name="Required" xml:space="preserve">
+    <value>This field is required</value>
+  </data>
+  <data name="UserNotFound" xml:space="preserve">
+    <value>This user is not found</value>
+  </data>
+  <data name="SizeLimitExceeded" xml:space="preserve">
+    <value>You cannot upload a file larger than {0} megabytes.</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>You are not allowed to access</value>
+  </data>
+  <data name="LoginSuccessful" xml:space="preserve">
+    <value>Login Successful</value>
+  </data>
+  <data name="InvalidCredentials" xml:space="preserve">
+    <value>Email or password is incorrect</value>
+  </data>
+  <data name="CredentialsAreRequired" xml:space="preserve">
+    <value>These credentials are required</value>
+  </data>
+  <data name="OldPassIsIncorrect" xml:space="preserve">
+    <value>Old password is incorrect </value>
+  </data>
+  <data name="OtpEmailSubject" xml:space="preserve">
+    <value>Verification Code</value>
+  </data>
+  <data name="InvalidOrExpiredOtp" xml:space="preserve">
+    <value>Invalid or expired otp</value>
+  </data>
+  <data name="OtpSentSuccessfully" xml:space="preserve">
+    <value>Otp is sent successfully </value>
+  </data>
+  <data name="ResetEmailSentSuccessfully" xml:space="preserve">
+    <value>Reset email sent successfully </value>
+  </data>
+  <data name="CategoryNameAlreadyExist" xml:space="preserve">
+    <value>This category is already exist</value>
+  </data>
+  <data name="CategoryNotFound" xml:space="preserve">
+    <value>This category is not found</value>
+  </data>
+  <data name="CannotDeleteCategoryContainsPlaylists" xml:space="preserve">
+    <value>You can't delete category contains playlists</value>
+  </data>
+  <data name="AccountVerifiedSuccessfully" xml:space="preserve">
+    <value>Account verified successfully   </value>
+  </data>
+  <data name="InvalidVideoPlatform" xml:space="preserve">
+    <value>Invalid video link: {0}. Supported platforms: YouTube, Facebook, Instagram, TikTok.</value>
+  </data>
+  <data name="PlaylistAcceptedMessage" xml:space="preserve">
+    <value>Your playlist "{0}" has been approved.</value>
+  </data>
+  <data name="PlaylistRejectedMessage" xml:space="preserve">
+    <value>Your playlist "{0}" has been rejected.</value>
+  </data>
+  <data name="PlaylistNotFound" xml:space="preserve">
+    <value>This playlist is not found</value>
+  </data>
+  <data name="PlaylistAlreadyAccepted" xml:space="preserve">
+    <value>This playlist is already accepted</value>
+  </data>
+  <data name="PlaylistAlreadyRejected" xml:space="preserve">
+    <value>This playlist is already rejected</value>
+  </data>
+  <data name="YouWereMentionedInVideo" xml:space="preserve">
+    <value>{0} mentioned you in the video "{1}".</value>
+  </data>
+  <data name="FriendRequestAccepted" xml:space="preserve">
+    <value>{0} accepted your friend request.</value>
+  </data>
+  <data name="RecievedFriendRequest" xml:space="preserve">
+    <value>{0} sent you a friend request.</value>
+  </data>
+  <data name="VideoAcceptedMeesage" xml:space="preserve">
+    <value>Your video "{0}" has been approved.</value>
+  </data>
+  <data name="VideoRejectedMeesage" xml:space="preserve">
+    <value>Your video "{0}" has been rejected.</value>
+  </data>
+  <data name="FollowedUserNewPlaylistMessage" xml:space="preserve">
+    <value>New playlist from {0}: "{1}".</value>
+  </data>
+  <data name="FollowedUserNewVideoMessage" xml:space="preserve">
+    <value>{0} has uploaded a new video "{1}".</value>
+  </data>
+  <data name="VideoReportedMessage" xml:space="preserve">
+    <value>Your video "{0}" has been deleted</value>
+  </data>
+  <data name="InvalidEmailFormat" xml:space="preserve">
+    <value>You should use valid email</value>
+  </data>
+  <data name="EmptyPlaylistLink" xml:space="preserve">
+    <value>Playlist link cannot be empty</value>
+  </data>
+  <data name="InvalidPlaylistLink" xml:space="preserve">
+    <value>Invalid playlist link format</value>
+  </data>
+  <data name="RadioPlaylistNotSupported" xml:space="preserve">
+    <value>YouTube Radio playlists are not supported. Please use a regular playlist created by a user.</value>
+  </data>
+  <data name="ChannelUploadsPlaylistNotSupported" xml:space="preserve">
+    <value>Channel upload playlists may not work reliably. Please use a regular playlist instead.</value>
+  </data>
+  <data name="PersonalPlaylistNotSupported" xml:space="preserve">
+    <value>Personal playlists (Watch Later, Liked Videos) are private and cannot be accessed.</value>
+  </data>
+  <data name="AutoGeneratedPlaylistNotSupported" xml:space="preserve">
+    <value>Auto-generated playlists are not supported. Please use a user-created playlist.</value>
+  </data>
+  <data name="InvalidPlaylistFormat" xml:space="preserve">
+    <value>Invalid playlist format. Please use a valid YouTube playlist link.</value>
+  </data>
+  <data name="PlaylistHasNoVideos" xml:space="preserve">
+    <value>This playlist has no videos</value>
+  </data>
+  <data name="PlaylistUnavailableOrPrivate" xml:space="preserve">
+    <value>Playlist is unavailable or private</value>
+  </data>
+  <data name="ErrorFetchingPlaylist" xml:space="preserve">
+    <value>Error fetching playlist: {0}</value>
+  </data>
+  <data name="EmailAlreadyExists" xml:space="preserve">
+    <value>This Email Already Exist</value>
+  </data>
+  <data name="PasswordTooShort" xml:space="preserve">
+    <value>Password must be at least {0} characters long</value>
+  </data>
+  <data name="PasswordRequiresDigit" xml:space="preserve">
+    <value>Password must contain at least one digit</value>
+  </data>
+  <data name="PasswordRequiresLower" xml:space="preserve">
+    <value>Password must contain at least one lowercase letter</value>
+  </data>
+  <data name="PasswordRequiresUpper" xml:space="preserve">
+    <value>Password must contain at least one uppercase letter</value>
+  </data>
+  <data name="PasswordRequiresSymbol" xml:space="preserve">
+    <value>Password must contain at least one special character</value>
+  </data>
+  <data name="UserNameAlreadyExist" xml:space="preserve">
+    <value>UserName is already exist</value>
+  </data>
+</root>
