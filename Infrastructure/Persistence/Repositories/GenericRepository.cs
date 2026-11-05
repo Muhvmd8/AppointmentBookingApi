@@ -18,11 +18,11 @@ namespace Persistence.Repositories
             _dbSet = _context.Set<TEntity>();
         }
 
-        public async Task AddAsync(TEntity entity)
-            => await _dbSet.AddAsync(entity);
+        public async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
+            => await _dbSet.AddAsync(entity, cancellationToken);
 
-        public async Task AddRangeAsync(IEnumerable<TEntity> entities)
-            => await _dbSet.AddRangeAsync(entities);
+        public async Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
+            => await _dbSet.AddRangeAsync(entities, cancellationToken);
 
         public void Update(TEntity entity)
             => _dbSet.Update(entity);
@@ -36,11 +36,12 @@ namespace Persistence.Repositories
         public void RemoveRange(IEnumerable<TEntity> entities)
             => _dbSet.RemoveRange(entities);
 
-        public async Task<TEntity?> GetByIdAsync(TKey key)
-            => await _dbSet.FindAsync(key);
+        public async Task<TEntity?> GetByIdAsync(TKey key, CancellationToken cancellationToken = default)
+            => await _dbSet.FindAsync(key, cancellationToken);
 
         public async Task<TEntity?> GetFirstOrDefaultAsync(
             Expression<Func<TEntity, bool>>? predicate = null,
+            CancellationToken cancellationToken = default,
             params Expression<Func<TEntity, object>>[] includes)
         {
             IQueryable<TEntity> query = _dbSet;
@@ -54,13 +55,14 @@ namespace Persistence.Repositories
                     query = query.Include(include);
             }
 
-            return await query.FirstOrDefaultAsync();
+            return await query.FirstOrDefaultAsync(cancellationToken);
         }
 
 
         public async Task<IEnumerable<TEntity>> GetAllAsync(
            Expression<Func<TEntity, bool>>? predicate = null,
            bool trackChanges = false,
+           CancellationToken cancellationToken = default,
            params Expression<Func<TEntity, object>>[] includes)
         {
             IQueryable<TEntity> query = trackChanges ? _dbSet : _dbSet.AsNoTracking();
@@ -78,22 +80,23 @@ namespace Persistence.Repositories
 
             query = query.OrderBy(e => 0);
 
-            return await query.ToListAsync();
+            return await query.ToListAsync(cancellationToken);
         }
 
 
 
-        public async Task<int> CountAsync(Expression<Func<TEntity, bool>>? predicate = null)
+        public async Task<int> CountAsync(Expression<Func<TEntity, bool>>? predicate = null, CancellationToken cancellationToken = default)
         {
             IQueryable<TEntity> query = _dbSet;
             if (predicate != null)
                 query = query.Where(predicate);
 
-            return await query.CountAsync();
+            return await query.CountAsync(cancellationToken);
         }
 
         public IQueryable<TEntity> GetAllQueryable(
              Expression<Func<TEntity, bool>>? predicate = null,
+             CancellationToken cancellationToken = default,
              params Expression<Func<TEntity, object>>[] includes)
         {
             IQueryable<TEntity> query = _dbSet;
@@ -110,10 +113,11 @@ namespace Persistence.Repositories
             return query;
         }
 
-        public async Task<bool> AnyAsync(Expression<Func<TEntity, bool>>? predicate = null)
-            => predicate is not null? await _dbSet.AnyAsync(predicate) : await _dbSet.AnyAsync();
+        public async Task<bool> AnyAsync(Expression<Func<TEntity, bool>>? predicate = null, CancellationToken cancellationToken = default)
+            => predicate is not null ? await _dbSet.AnyAsync(predicate, cancellationToken) : await _dbSet.AnyAsync(cancellationToken);
         public IQueryable<TEntity> GetAllAdvanced(
             Expression<Func<TEntity, bool>>? predicate = null,
+            CancellationToken cancellationToken = default,
             params Func<IQueryable<TEntity>, IQueryable<TEntity>>[] includes)
         {
             IQueryable<TEntity> query = _dbSet;

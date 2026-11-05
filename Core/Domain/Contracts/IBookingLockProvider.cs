@@ -2,6 +2,6 @@
 {
     public interface IBookingLockProvider
     {
-        Task<bool> AcquireAsync(int employeeId, DateOnly appointmentDate);
+        Task<bool> AcquireAsync(int employeeId, DateOnly appointmentDate, CancellationToken cancellationToken);
     }
 }

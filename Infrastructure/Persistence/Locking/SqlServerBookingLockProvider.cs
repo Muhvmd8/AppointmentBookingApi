@@ -9,7 +9,7 @@
         ApplicationDbContext context)
         : IBookingLockProvider
     {
-        public async Task<bool> AcquireAsync(int employeeId, DateOnly appointmentDate)
+        public async Task<bool> AcquireAsync(int employeeId, DateOnly appointmentDate, CancellationToken cancellationToken = default)
         {
             var resource = $"AppointmentBooking:{employeeId}:{appointmentDate:yyyyMMdd}";
 

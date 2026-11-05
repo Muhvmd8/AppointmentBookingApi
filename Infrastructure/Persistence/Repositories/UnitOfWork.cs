@@ -22,24 +22,24 @@ namespace Persistence.Repositories
             return repo;
         }
 
-        public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => await _context.SaveChangesAsync(cancellationToken);
 
-        public async Task BeginTransactionAsync()
+        public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
             if (_context.Database.CurrentTransaction is null)
-                await _context.Database.BeginTransactionAsync();
+                await _context.Database.BeginTransactionAsync(cancellationToken);
         }
 
-        public async Task CommitTransactionAsync()
+        public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
         {
             if (_context.Database.CurrentTransaction is not null)
-                await _context.Database.CurrentTransaction.CommitAsync();
+                await _context.Database.CurrentTransaction.CommitAsync(cancellationToken);
         }
 
-        public async Task RollbackTransactionAsync()
+        public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
         {
             if (_context.Database.CurrentTransaction is not null)
-                await _context.Database.CurrentTransaction.RollbackAsync();
+                await _context.Database.CurrentTransaction.RollbackAsync(cancellationToken);
         }
     }
 }

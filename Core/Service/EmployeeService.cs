@@ -14,7 +14,8 @@
         IMapper mapper) : IEmployeeService
     {
         public async Task<Result<EmployeeResponse>> CreateAsync(
-            CreateEmployeeRequest request)
+            CreateEmployeeRequest request,
+            CancellationToken cancellationToken = default)
         {
             var employeeResult = Employee.Create(request.Name, request.PhoneNumber);
 
@@ -25,21 +26,21 @@
 
             var repository = unitOfWork.GetRepository<Employee, int>();
 
-            await repository.AddAsync(employee);
+            await repository.AddAsync(employee, cancellationToken);
 
-            await unitOfWork.SaveChangesAsync();
+            await unitOfWork.SaveChangesAsync(cancellationToken);
 
             var response = mapper.Map<EmployeeResponse>(employee);
 
             return Result<EmployeeResponse>.Success(response);
         }
 
-        public async Task<Result<EmployeeResponse>> GetByIdAsync(int id)
+        public async Task<Result<EmployeeResponse>> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             var repository = unitOfWork.GetRepository<Employee, int>();
 
             var employee = await repository.GetFirstOrDefaultAsync(
-                x => x.Id == id);
+                x => x.Id == id, cancellationToken);
 
             if (employee is null)
                 return Result<EmployeeResponse>.Failure(EmployeeErrors.NotFound);
@@ -51,7 +52,8 @@
 
         public async Task<Result<PagedResult<EmployeeResponse>>> GetAllAsync(
             int pageNumber,
-            int pageSize)
+            int pageSize,
+            CancellationToken cancellationToken = default)
         {
             if (pageNumber <= 0 || pageSize <= 0 || pageSize > 100)
                 return Result<PagedResult<EmployeeResponse>>.Failure(EmployeeErrors.InvalidPagination);
@@ -63,12 +65,12 @@
                 .AsNoTracking()
                 .OrderBy(x => x.Name);
 
-            var totalCount = await query.CountAsync();
+            var totalCount = await query.CountAsync(cancellationToken);
 
             var employees = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var mappedEmployees = mapper.Map<List<EmployeeResponse>>(employees);
 
@@ -79,12 +81,12 @@
             return Result<PagedResult<EmployeeResponse>>.Success(pagedResult);
         }
 
-        public async Task<Result<EmployeeResponse>> UpdateAsync(int id, UpdateEmployeeRequest request)
+        public async Task<Result<EmployeeResponse>> UpdateAsync(int id, UpdateEmployeeRequest request, CancellationToken cancellationToken = default)
         {
             var repository = unitOfWork.GetRepository<Employee, int>();
 
             var employee = await repository.GetFirstOrDefaultAsync(
-                x => x.Id == id);
+                x => x.Id == id, cancellationToken);
 
             if (employee is null)
                 return Result<EmployeeResponse>.Failure(EmployeeErrors.NotFound);
@@ -94,19 +96,19 @@
             if (updateResult.IsFailure)
                 return Result<EmployeeResponse>.Failure(updateResult.Error!);
 
-            await unitOfWork.SaveChangesAsync();
+            await unitOfWork.SaveChangesAsync(cancellationToken);
 
             var response = mapper.Map<EmployeeResponse>(employee);
 
             return Result<EmployeeResponse>.Success(response);
         }
 
-        public async Task<Result> DeactivateAsync(int id)
+        public async Task<Result> DeactivateAsync(int id, CancellationToken cancellationToken = default)
         {
             var repository = unitOfWork.GetRepository<Employee, int>();
 
             var employee = await repository.GetFirstOrDefaultAsync(
-                x => x.Id == id);
+                x => x.Id == id, cancellationToken);
 
             if (employee is null)
                 return Result.Failure(EmployeeErrors.NotFound);
@@ -116,7 +118,7 @@
 
             employee.Deactivate();
 
-            await unitOfWork.SaveChangesAsync();
+            await unitOfWork.SaveChangesAsync(cancellationToken);
 
             return Result.Success();
         }

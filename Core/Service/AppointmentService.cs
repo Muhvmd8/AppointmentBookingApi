@@ -21,7 +21,8 @@ namespace Service
         private readonly BookingSettings _settings = settings.Value;
 
         public async Task<Result<AppointmentResponse>> CreateAppointmentAsync(
-            CreateAppointmentRequest request)
+            CreateAppointmentRequest request,
+            CancellationToken cancellationToken = default)
         {
             var startAt = request.StartAt.ToUniversalTime();
             var endAt = startAt.AddMinutes(request.DurationInMinutes);
@@ -53,11 +54,13 @@ namespace Service
             {
                 var lockAcquired = await bookingLockProvider.AcquireAsync(
                     request.EmployeeId,
-                    appointmentDate);
+                    appointmentDate,
+                    cancellationToken
+                    );
 
                 if (!lockAcquired)
                 {
-                    await unitOfWork.RollbackTransactionAsync();
+                    await unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return Result<AppointmentResponse>.Failure(AppointmentErrors.BookingLockUnavailable);
                 }
 
@@ -69,13 +72,13 @@ namespace Service
 
                 if (employee is null)
                 {
-                    await unitOfWork.RollbackTransactionAsync();
+                    await unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return Result<AppointmentResponse>.Failure(EmployeeErrors.NotFound);
                 }
 
                 if (!employee.IsActive)
                 {
-                    await unitOfWork.RollbackTransactionAsync();
+                    await unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return Result<AppointmentResponse>.Failure(EmployeeErrors.Inactive);
                 }
 
@@ -85,11 +88,11 @@ namespace Service
                         x.EmployeeId == request.EmployeeId &&
                         x.Status == AppointmentStatus.Scheduled &&
                         x.StartAt < endAt &&
-                        x.EndAt > startAt);
+                        x.EndAt > startAt, cancellationToken);
 
                 if (hasOverlap)
                 {
-                    await unitOfWork.RollbackTransactionAsync();
+                    await unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return Result<AppointmentResponse>.Failure(AppointmentErrors.TimeSlotUnavailable);
                 }
 
@@ -102,21 +105,21 @@ namespace Service
 
                 if (appointmentResult.IsFailure)
                 {
-                    await unitOfWork.RollbackTransactionAsync();
+                    await unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return Result<AppointmentResponse>.Failure(appointmentResult.Error!);
                 }
 
                 var appointment = appointmentResult.Value;
 
                 await appointmentRepository.AddAsync(appointment);
-                await unitOfWork.SaveChangesAsync();
-                await unitOfWork.CommitTransactionAsync();
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+                await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 return mapper.Map<AppointmentResponse>(appointment);
             }
             catch
             {
-                await unitOfWork.RollbackTransactionAsync();
+                await unitOfWork.RollbackTransactionAsync(cancellationToken);
                 throw;
             }
         }
@@ -124,7 +127,8 @@ namespace Service
         public async Task<Result<IReadOnlyList<AvailableSlotResponse>>> GetAvailableSlotsAsync(
             int employeeId,
             DateOnly date,
-            int durationInMinutes)
+            int durationInMinutes,
+            CancellationToken cancellationToken = default)
         {
             if (durationInMinutes is < 15 or > 120)
                 return Result<IReadOnlyList<AvailableSlotResponse>>.Failure(AppointmentErrors.InvalidDuration);
@@ -136,7 +140,7 @@ namespace Service
                 unitOfWork.GetRepository<Appointment, long>();
 
             var employee = await employeeRepository.GetFirstOrDefaultAsync(
-                x => x.Id == employeeId);
+                x => x.Id == employeeId, cancellationToken);
 
             if (employee is null)
                 return Result<IReadOnlyList<AvailableSlotResponse>>.Failure(EmployeeErrors.NotFound);
@@ -169,7 +173,7 @@ namespace Service
                     x.StartAt < endAt &&
                     x.EndAt > startAt)
                 .OrderBy(x => x.StartAt)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var slots = new List<AvailableSlotResponse>();
             var now = timeProvider.GetUtcNow();
@@ -201,7 +205,8 @@ namespace Service
             int employeeId,
             DateOnly date,
             int pageNumber,
-            int pageSize)
+            int pageSize,
+            CancellationToken cancellationToken = default)
         {
             if (pageNumber <= 0 || pageSize <= 0 || pageSize > 100)
                 return Result<PagedResult<EmployeeAppointmentResponse>>.Failure(AppointmentErrors.InvalidPagination);
@@ -213,7 +218,7 @@ namespace Service
                 unitOfWork.GetRepository<Appointment, long>();
 
             var employeeExists = await employeeRepository.GetFirstOrDefaultAsync(
-                x => x.Id == employeeId);
+                x => x.Id == employeeId, cancellationToken);
 
             if (employeeExists is null)
                 return Result<PagedResult<EmployeeAppointmentResponse>>.Failure(EmployeeErrors.NotFound);
@@ -243,13 +248,13 @@ namespace Service
                     x.StartAt >= startAt &&
                     x.StartAt < endAt);
 
-            var totalCount = await query.CountAsync();
+            var totalCount = await query.CountAsync(cancellationToken);
 
             var items = await query
                 .OrderBy(x => x.StartAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var mappedItems = mapper.Map<IReadOnlyList<EmployeeAppointmentResponse>>(items);
 
@@ -260,11 +265,12 @@ namespace Service
         }
 
         public async Task<Result> CancelAppointmentAsync(
-            long appointmentId)
+            long appointmentId,
+            CancellationToken cancellationToken = default)
         {
             var appointmentRepository = unitOfWork.GetRepository<Appointment, long>();
 
-            await unitOfWork.BeginTransactionAsync();
+            await unitOfWork.BeginTransactionAsync(cancellationToken);
 
             try
             {
@@ -272,7 +278,7 @@ namespace Service
 
                 if (appointment is null)
                 {
-                    await unitOfWork.RollbackTransactionAsync();
+                    await unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return Result.Failure(AppointmentErrors.NotFound);
                 }
 
@@ -284,20 +290,21 @@ namespace Service
 
                 var lockAcquired = await bookingLockProvider.AcquireAsync(
                     appointment.EmployeeId,
-                    appointmentDate);
+                    appointmentDate,
+                    cancellationToken);
 
                 if (!lockAcquired)
                 {
-                    await unitOfWork.RollbackTransactionAsync();
+                    await unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return Result.Failure(AppointmentErrors.BookingLockUnavailable);
                 }
 
                 // Re-read after acquiring the lock.
-                appointment = await appointmentRepository.GetFirstOrDefaultAsync(x => x.Id == appointmentId);
+                appointment = await appointmentRepository.GetFirstOrDefaultAsync(x => x.Id == appointmentId, cancellationToken);
 
                 if (appointment is null)
                 {
-                    await unitOfWork.RollbackTransactionAsync();
+                    await unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return Result.Failure(AppointmentErrors.NotFound);
                 }
 
@@ -305,18 +312,18 @@ namespace Service
 
                 if (cancelResult.IsFailure)
                 {
-                    await unitOfWork.RollbackTransactionAsync();
+                    await unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return Result.Failure(cancelResult.Error!);
                 }
 
-                await unitOfWork.SaveChangesAsync();
-                await unitOfWork.CommitTransactionAsync();
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+                await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 return Result.Success();
             }
             catch
             {
-                await unitOfWork.RollbackTransactionAsync();
+                await unitOfWork.RollbackTransactionAsync(cancellationToken);
                 throw;
             }
         }

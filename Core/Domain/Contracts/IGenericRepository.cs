@@ -8,12 +8,12 @@ namespace Domain.Contracts
         /// <summary>
         /// Adds a single entity to the database asynchronously.
         /// </summary>
-        Task AddAsync(TEntity entity);
+        Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Adds a collection of entities to the database asynchronously.
         /// </summary>
-        Task AddRangeAsync(IEnumerable<TEntity> entities);
+        Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Updates a single entity in the database.
@@ -38,7 +38,7 @@ namespace Domain.Contracts
         /// <summary>
         /// Finds an entity by its primary key asynchronously.
         /// </summary>
-        Task<TEntity?> GetByIdAsync(TKey key);
+        Task<TEntity?> GetByIdAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves the first entity that matches the given predicate, 
@@ -46,6 +46,7 @@ namespace Domain.Contracts
         /// </summary>
         Task<TEntity?> GetFirstOrDefaultAsync(
             Expression<Func<TEntity, bool>>? predicate = null,
+            CancellationToken cancellationToken = default,
             params Expression<Func<TEntity, object>>[] includes);
 
         /// <summary>
@@ -55,17 +56,18 @@ namespace Domain.Contracts
         Task<IEnumerable<TEntity>> GetAllAsync(
             Expression<Func<TEntity, bool>>? predicate = null,
             bool trackChanges = false,
+            CancellationToken cancellationToken = default,
             params Expression<Func<TEntity, object>>[] includes);
 
         /// <summary>
         /// Counts the number of entities that match the given predicate asynchronously.
         /// </summary>
-        Task<int> CountAsync(Expression<Func<TEntity, bool>>? predicate = null);
+        Task<int> CountAsync(Expression<Func<TEntity, bool>>? predicate = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Checks if any entity matches the given predicate asynchronously.
         /// </summary>
-        Task<bool> AnyAsync(Expression<Func<TEntity, bool>>? predicate = null);
+        Task<bool> AnyAsync(Expression<Func<TEntity, bool>>? predicate = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns an <see cref="IQueryable{TEntity}"/> to allow further filtering, 
@@ -73,9 +75,11 @@ namespace Domain.Contracts
         /// </summary>
         IQueryable<TEntity> GetAllQueryable(
             Expression<Func<TEntity, bool>>? predicate = null,
+            CancellationToken cancellationToken = default,
             params Expression<Func<TEntity, object>>[] includes);
         IQueryable<TEntity> GetAllAdvanced(
             Expression<Func<TEntity, bool>>? predicate = null,
+            CancellationToken cancellationToken = default,
             params Func<IQueryable<TEntity>, IQueryable<TEntity>>[] includes);
 
     }

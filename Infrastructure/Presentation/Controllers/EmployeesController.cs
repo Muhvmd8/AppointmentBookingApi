@@ -13,9 +13,10 @@ namespace Presentation.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<EmployeeResponse>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<EmployeeResponse>>> CreateEmployee(
-            [FromBody] CreateEmployeeRequest request)
+            [FromBody] CreateEmployeeRequest request,
+            CancellationToken cancellationToken = default)
         {
-            var result = await employeeService.CreateAsync(request);
+            var result = await employeeService.CreateAsync(request, cancellationToken);
 
             if (result.IsFailure)
                 return ApiResponseFactory.Problem(result, HttpContext.TraceIdentifier);
@@ -29,9 +30,10 @@ namespace Presentation.Controllers
 
         [HttpGet("{id:int}")]
         [ProducesResponseType(typeof(ApiResponse<EmployeeResponse>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ApiResponse<EmployeeResponse>>> GetEmployeeById(int id)
+        public async Task<ActionResult<ApiResponse<EmployeeResponse>>> GetEmployeeById(int id,
+            CancellationToken cancellationToken = default)
         {
-            var result = await employeeService.GetByIdAsync(id);
+            var result = await employeeService.GetByIdAsync(id, cancellationToken);
 
             if (result.IsFailure)
                 return ApiResponseFactory.Problem(result, HttpContext.TraceIdentifier);
@@ -47,9 +49,10 @@ namespace Presentation.Controllers
         [ProducesResponseType(typeof(ApiResponse<EmployeeResponse>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<PagedResult<EmployeeResponse>>>> GetEmployees(
             [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            CancellationToken cancellationToken = default)
         {
-            var result = await employeeService.GetAllAsync(pageNumber, pageSize);
+            var result = await employeeService.GetAllAsync(pageNumber, pageSize, cancellationToken);
 
             if (result.IsFailure)
                 return ApiResponseFactory.Problem(result, HttpContext.TraceIdentifier);
@@ -66,9 +69,10 @@ namespace Presentation.Controllers
         [ProducesResponseType(typeof(ApiResponse<EmployeeResponse>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<EmployeeResponse>>> UpdateEmployee(
             int id,
-            [FromBody] UpdateEmployeeRequest request)
+            [FromBody] UpdateEmployeeRequest request,
+            CancellationToken cancellationToken = default)
         {
-            var result = await employeeService.UpdateAsync(id, request);
+            var result = await employeeService.UpdateAsync(id, request, cancellationToken);
 
             if (result.IsFailure)
                 return ApiResponseFactory.Problem(result, HttpContext.TraceIdentifier);
@@ -82,9 +86,10 @@ namespace Presentation.Controllers
 
         [HttpPatch("{id:int}/deactivate")]
         [ProducesResponseType(typeof(ApiResponse<>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ApiResponse<bool>>> DeactivateEmployee(int id)
+        public async Task<ActionResult<ApiResponse<bool>>> DeactivateEmployee(int id,
+            CancellationToken cancellationToken = default)
         {
-            var result = await employeeService.DeactivateAsync(id);
+            var result = await employeeService.DeactivateAsync(id, cancellationToken);
 
             if (result.IsFailure)
                 return ApiResponseFactory.Problem(result, HttpContext.TraceIdentifier);

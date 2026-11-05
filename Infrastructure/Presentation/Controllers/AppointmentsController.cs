@@ -12,9 +12,9 @@ namespace Presentation.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<AppointmentResponse>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<AppointmentResponse>>> CreateAppointment(
-            [FromBody] CreateAppointmentRequest request)
+            [FromBody] CreateAppointmentRequest request, CancellationToken cancellationToken = default)
         {
-            var result = await appointmentService.CreateAppointmentAsync(request);
+            var result = await appointmentService.CreateAppointmentAsync(request, cancellationToken);
 
             if (result.IsFailure)
                 return ApiResponseFactory.Problem(result, HttpContext.TraceIdentifier);
@@ -33,12 +33,14 @@ namespace Presentation.Controllers
         public async Task<ActionResult<ApiResponse<IReadOnlyList<AvailableSlotResponse>>>> GetAvailableSlots(
             [FromRoute] int employeeId,
             [FromQuery] DateOnly date,
-            [FromQuery] int durationInMinutes)
+            [FromQuery] int durationInMinutes,
+            CancellationToken cancellationToken = default)
         {
             var result = await appointmentService.GetAvailableSlotsAsync(
                 employeeId,
                 date,
-                durationInMinutes);
+                durationInMinutes,
+                cancellationToken);
 
             if (result.IsFailure)
                 return ApiResponseFactory.Problem(
@@ -60,14 +62,16 @@ namespace Presentation.Controllers
             [FromRoute] int employeeId,
             [FromQuery] DateOnly date,
             [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            CancellationToken cancellationToken = default)
         {
 
             var result = await appointmentService.GetEmployeeScheduleAsync(
                 employeeId,
                 date,
                 pageNumber,
-                pageSize);
+                pageSize,
+                cancellationToken);
 
             if (result.IsFailure)
                 return ApiResponseFactory.Problem(
@@ -89,10 +93,12 @@ namespace Presentation.Controllers
         [HttpPatch("{appointmentId:long}/cancel")]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<bool>>> CancelAppointment(
-            [FromRoute] long appointmentId)
+            [FromRoute] long appointmentId,
+            CancellationToken cancellationToken = default)
         {
             var result = await appointmentService.CancelAppointmentAsync(
-                appointmentId);
+                appointmentId,
+                cancellationToken);
 
             if (result.IsFailure)
                 return ApiResponseFactory.Problem(
