@@ -63,6 +63,10 @@ namespace Service
                 if (!lockAcquired)
                 {
                     await unitOfWork.RollbackTransactionAsync(cancellationToken);
+                    logger.LogWarning(
+                        "Failed to acquire booking lock for Employee {Id} on {AppointmentDate}.",
+                        request.EmployeeId,
+                        appointmentDate);
                     return Result<AppointmentResponse>.Failure(AppointmentErrors.BookingLockUnavailable);
                 }
 
@@ -75,12 +79,18 @@ namespace Service
                 if (employee is null)
                 {
                     await unitOfWork.RollbackTransactionAsync(cancellationToken);
+                    logger.LogWarning(
+                        "Employee with ID {Id} not found when trying to create an appointment.",
+                        request.EmployeeId);
                     return Result<AppointmentResponse>.Failure(EmployeeErrors.NotFound);
                 }
 
                 if (!employee.IsActive)
                 {
                     await unitOfWork.RollbackTransactionAsync(cancellationToken);
+                    logger.LogWarning(
+                        "Employee with ID {Id} is inactive and cannot be assigned an appointment.",
+                        request.EmployeeId);
                     return Result<AppointmentResponse>.Failure(EmployeeErrors.Inactive);
                 }
 
@@ -95,6 +105,10 @@ namespace Service
                 if (hasOverlap)
                 {
                     await unitOfWork.RollbackTransactionAsync(cancellationToken);
+                    logger.LogWarning(
+                        "Time slot unavailable for Employee {Id} on {StartAt}.",
+                        request.EmployeeId,
+                        request.StartAt);
                     return Result<AppointmentResponse>.Failure(AppointmentErrors.TimeSlotUnavailable);
                 }
 
@@ -118,7 +132,7 @@ namespace Service
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 logger.LogInformation(
-                    "Creating appointment for Employee {EmployeeId} at {StartAt} with duration {DurationInMinutes} minutes.",
+                    "Creating appointment for Employee {Id} at {StartAt} with duration {DurationInMinutes} minutes.",
                     request.EmployeeId,
                     request.StartAt,
                     request.DurationInMinutes);
@@ -128,6 +142,10 @@ namespace Service
             catch
             {
                 await unitOfWork.RollbackTransactionAsync(cancellationToken);
+                logger.LogError(
+                    "An error occurred while creating an appointment for Employee {Id} at {StartAt}.",
+                    request.EmployeeId,
+                    request.StartAt);
                 throw;
             }
         }
@@ -328,7 +346,7 @@ namespace Service
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 logger.LogInformation(
-                    "Cancelling appointment {AppointmentId} for Employee {EmployeeId} scheduled at {StartAt}.",
+                    "Cancelling appointment {AppointmentId} for Employee {Id} scheduled at {StartAt}.",
                     appointment.Id,
                     appointment.EmployeeId,
                     appointment.StartAt);
