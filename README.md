@@ -2,8 +2,6 @@
 
 A backend API for managing employee appointments. The system is built with ASP.NET Core and follows an Onion Architecture approach, keeping business rules separate from application services and infrastructure concerns.
 
-> **Documentation note:** This README is based on the implementation details available so far. A few implementation-specific details (exact project names, endpoint routes, database constraints, and the SQL locking mechanism) were not available, so they are intentionally not guessed. Update the marked sections after checking the source code.
-
 ## Table of Contents
 
 - [Overview](#overview)
