@@ -336,6 +336,87 @@ Examples of failure conditions visible in the service implementation include:
 
 The API layer is responsible for translating application results into HTTP responses. The exact error codes and response envelope should be documented from the shared API response and result-to-HTTP mapping implementation.
 
+### Logging Dashboard with Serilog UI
+
+The project integrates **Serilog UI** to provide a centralized dashboard for inspecting and monitoring application logs stored in a PostgreSQL database.
+
+It simplifies troubleshooting by providing a web-based interface where developers can browse and inspect log events without manually querying the logging database.
+
+**Key Features:**
+
+- **PostgreSQL Integration:** Stores application logs in a dedicated PostgreSQL database table.
+- **Centralized Log Inspection:** Provides a dashboard for browsing and investigating logged events.
+- **Custom Authorization:** Implements a custom authorization filter using Basic Authentication to restrict access to the logging dashboard.
+- **Configuration-Based Credentials:** Keeps dashboard credentials in application configuration instead of hardcoding them into the authorization logic.
+
+**Dashboard Endpoint:**
+
+```http
+/serilog-ui
+```
+
+**Architecture Overview:**
+
+```text
+Application
+    |
+    v
+Serilog Logging
+    |
+    v
+PostgreSQL Log Storage
+    |
+    v
+Serilog UI Dashboard
+    |
+    v
+Custom Authorization Filter
+    |
+    v
+Log Inspection Interface
+```
+
+### Logging Dashboard with Serilog UI
+
+The project integrates **Serilog UI** to provide a centralized dashboard for inspecting and monitoring application logs stored in a PostgreSQL database.
+
+It simplifies troubleshooting by providing a web-based interface where developers can browse and inspect log events without manually querying the logging database.
+
+**Key Features:**
+
+- **SQL Server Integration:** Stores application logs in a dedicated SQL Server database table.
+- **Centralized Log Inspection:** Provides a dashboard for browsing and investigating logged events.
+- **Custom Authorization:** Implements a custom authorization filter using Basic Authentication to restrict access to the logging dashboard.
+- **Configuration-Based Credentials:** Keeps dashboard credentials in application configuration instead of hardcoding them into the authorization logic.
+- **Access:** baseUrl/serilog-ui
+
+**Dashboard Endpoint:**
+
+```http
+/serilog-ui
+```
+
+**Architecture Overview:**
+
+```text
+Application
+    |
+    v
+Serilog Logging
+    |
+    v
+PostgreSQL Log Storage
+    |
+    v
+Serilog UI Dashboard
+    |
+    v
+Custom Authorization Filter
+    |
+    v
+Log Inspection Interface
+```
+
 ## Running the Project
 
 The exact setup commands and required configuration keys were not present in the available source material. Use the following checklist when preparing the project locally:
