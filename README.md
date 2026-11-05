@@ -10,6 +10,7 @@ A backend API for managing employee appointments. The system is built with ASP.N
 - [Core Features](#core-features)
 - [Technology Stack](#technology-stack)
 - [Architecture](#architecture)
+- [Rich Domain Models](#rich-domain-models)
 - [Booking Workflow](#booking-workflow)
 - [Concurrency and Double Booking](#concurrency-and-double-booking)
 - [Appointment Time Handling](#appointment-time-handling)
@@ -96,6 +97,23 @@ flowchart TB
 | Database | Persists employees and appointments. |
 
 The exact folder and project names should be aligned with the actual solution structure.
+
+## Domain Model Design
+
+The project follows the Rich Domain Model approach instead of treating entities as simple data containers.
+
+Domain entities encapsulate their own business rules and state transitions, keeping the domain logic close to the data it protects.
+
+For example, the `Appointment` entity is responsible for managing its lifecycle through domain methods such as `Cancel()`. This ensures that an appointment cannot transition to an invalid state, regardless of which application service invokes the operation.
+
+### Key Principles
+
+- **Encapsulation:** Entity properties use private setters to prevent uncontrolled state modifications.
+- **Business Invariants:** Rules that protect an entity's valid state are enforced within the domain model.
+- **Controlled State Transitions:** Changes to entity state happen through explicit domain methods.
+- **Separation of Concerns:** Application services coordinate use cases and external dependencies, while entities protect domain-specific rules.
+
+This keeps business rules centralized and makes the domain model more consistent and easier to maintain.
 
 ## Booking Workflow
 
