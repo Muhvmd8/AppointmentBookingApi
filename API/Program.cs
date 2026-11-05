@@ -1,4 +1,5 @@
-﻿using API.Middlewares.Extensions;
+﻿using API.AuthFilters;
+using API.Middlewares.Extensions;
 using Domain.Contracts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
@@ -7,6 +8,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Persistence;
+using Serilog;
+using Serilog.Ui.Core.Extensions;
+using Serilog.Ui.MsSqlServerProvider.Extensions;
+using Serilog.Ui.Web.Extensions;
 using Service;
 using Shared.Settings;
 using System.Globalization;
@@ -24,19 +29,26 @@ namespace API
             #region Add services to the container 
 
             #region Serilog Configuration
-            //Log.Logger = new LoggerConfiguration()
-            //    .ReadFrom.Configuration(builder.Configuration)
-            //    .CreateLogger();
-            //builder.Host.UseSerilog();
 
-            //builder.Services.AddSerilogUi(options =>
-            //    options.UseNpgSql(opts => opts
-            //        .WithConnectionString(builder.Configuration.GetConnectionString("DefaultConnection")??String.Empty)
-            //        .WithSchema("Logging")
-            //        .WithTable("Logs")
-            //    )
-            //    .AddScopedAsyncAuthFilter<SerilogUiAuthorizationFilter>()
-            //);
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .CreateLogger();
+
+            builder.Host.UseSerilog();
+
+            var connectionString =
+                builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException(
+                    "DefaultConnection is missing.");
+
+            builder.Services.AddSerilogUi(options =>
+                options.UseSqlServer(opts => opts
+                    .WithConnectionString(connectionString)
+                    .WithSchema("Logging")
+                    .WithTable("Logs")
+                )
+                .AddScopedAsyncAuthFilter<SerilogUiAuthorizationFilter>()
+            );
             #endregion
 
             builder.Services.AddControllers();
@@ -304,10 +316,10 @@ namespace API
             );
             #endregion
 
-            //#region SerilogUI Middleware
-            //app.UseSerilogUiAuth();
-            //app.UseSerilogUi();
-            //#endregion
+            #region SerilogUI Middleware
+            app.UseSerilogUiAuth();
+            app.UseSerilogUi();
+            #endregion
 
             app.MapControllers();
 
