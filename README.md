@@ -98,7 +98,7 @@ flowchart TB
 
 The exact folder and project names should be aligned with the actual solution structure.
 
-## Domain Model Design
+## Rich Domain Model Design
 
 The project follows the Rich Domain Model approach instead of treating entities as simple data containers.
 
