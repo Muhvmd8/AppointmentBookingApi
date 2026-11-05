@@ -51,5 +51,14 @@
             Error.Conflict(
                 "Appointment.AlreadyCancelled",
                 "The appointment is already cancelled.");
+        public static readonly Error BookingLockUnavailable =
+            Error.Conflict(
+                "Appointment.BookingLockUnavailable",
+                "Unable to acquire booking lock.");
+
+        public static readonly Error InvalidPagination =
+            Error.Validation(
+                "Appointment.InvalidPagination",
+                "Invalid pagination parameters.");
     }
 }

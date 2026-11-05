@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Persistence;
+using Service;
 using Shared.Settings;
 using System.Globalization;
 using System.Text;
@@ -44,7 +45,7 @@ namespace API
             {
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "AppointmentBookingApi", Version = "v1" });
 
-                options.CustomSchemaIds(type => type.FullName);
+                options.CustomSchemaIds(type => type.FullName ?? type.Name);
 
                 options.MapType<DateOnly>(() => new OpenApiSchema
                 {
@@ -90,7 +91,7 @@ namespace API
             builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddInfrastructureServices(builder.Configuration);
-            //builder.Services.AddApplicationServices(builder.Configuration);
+            builder.Services.AddApplicationServices(builder.Configuration);
             builder.Services.AddSignalR();
             //builder.Services.AddScoped<INotificationRealTimeSender, NotificationRealTimeSender>();
             #region Hashing Decryption Configuration
@@ -100,6 +101,7 @@ namespace API
             #region Settings Configuration
             builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
             builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
+            builder.Services.Configure<BookingSettings>(builder.Configuration.GetSection("BookingSettings"));
             #endregion
 
             #region Add Identity

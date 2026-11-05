@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Persistence.Data;
+using Persistence.Locking;
 using Persistence.Repositories;
 using Persistence.Seeding;
 
@@ -17,6 +18,7 @@ namespace Persistence
 
             services.AddScoped<IDataSeeding, DataSeeding>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IBookingLockProvider, SqlServerBookingLockProvider>();
 
             return services;
         }

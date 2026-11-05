@@ -1,4 +1,4 @@
-﻿namespace Persistence.Locking
+﻿namespace Domain.Contracts
 {
     public interface IBookingLockProvider
     {

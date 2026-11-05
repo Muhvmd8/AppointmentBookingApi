@@ -1,5 +1,6 @@
 ﻿namespace Persistence.Locking
 {
+    using Domain.Contracts;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore.Storage;
     using Persistence.Data;

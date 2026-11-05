@@ -23,5 +23,23 @@ namespace Persistence.Repositories
         }
 
         public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();
+
+        public async Task BeginTransactionAsync()
+        {
+            if (_context.Database.CurrentTransaction is null)
+                await _context.Database.BeginTransactionAsync();
+        }
+
+        public async Task CommitTransactionAsync()
+        {
+            if (_context.Database.CurrentTransaction is not null)
+                await _context.Database.CurrentTransaction.CommitAsync();
+        }
+
+        public async Task RollbackTransactionAsync()
+        {
+            if (_context.Database.CurrentTransaction is not null)
+                await _context.Database.CurrentTransaction.RollbackAsync();
+        }
     }
 }
