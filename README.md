@@ -1,451 +1,412 @@
-# Appointment Booking API
+# Appointment Booking System API
 
-A backend API for managing employee appointments. The system is built with ASP.NET Core and follows an Onion Architecture approach, keeping business rules separate from application services and infrastructure concerns.
+A RESTful Appointment Booking System built with **ASP.NET Core Web API**, designed as a technical assessment to automate appointment scheduling, employee management, and availability discovery.
 
-## Table of Contents
+The system addresses common scheduling challenges such as double booking, appointment conflicts, and limited visibility into employee schedules through a structured backend architecture with a focus on maintainability, data consistency, and performance.
 
-- [Overview](#overview)
-- [Core Features](#core-features)
-- [Technology Stack](#technology-stack)
-- [Architecture](#architecture)
-- [Rich Domain Models](#rich-domain-models)
-- [Booking Workflow](#booking-workflow)
-- [Concurrency and Double Booking](#concurrency-and-double-booking)
-- [Appointment Time Handling](#appointment-time-handling)
-- [Domain Model](#domain-model)
-- [Application Services](#application-services)
-- [Booking Configuration](#booking-configuration)
-- [API Capabilities](#api-capabilities)
-- [Error Handling](#error-handling)
-- [Running the Project](#running-the-project)
-- [Important Implementation Notes](#important-implementation-notes)
+## Business Overview
 
-## Overview
+The application provides the following capabilities:
 
-The API supports the main operations involved in an employee appointment booking process:
+- **Appointment Booking:** Create appointments while preventing overlapping bookings for the same employee.
+- **Availability Discovery:** Retrieve available time slots based on employee schedules and configurable booking rules.
+- **Employee Scheduling:** Retrieve an employee's daily appointments with pagination.
+- **Appointment Cancellation:** Cancel existing appointments and immediately release their time slots.
+- **Employee Management:** Manage employees through CRUD-style operations, including activation and deactivation.
 
-1. Create an appointment for an active employee.
-2. Retrieve available time slots for an employee on a specific date.
-3. Retrieve an employee's scheduled appointments for a date, with pagination.
-4. Cancel an existing appointment.
+## Tech Stack
 
-The application stores appointment timestamps as UTC instants and uses a configured business time zone when validating working hours and building an employee's daily schedule.
-
-## Core Features
-
-- **Appointment creation:** validates the requested time, employee availability, working hours, and overlapping appointments.
-- **Available slots:** generates candidate slots based on working hours and the configured slot interval.
-- **Employee schedule:** returns scheduled appointments for a selected date with pagination.
-- **Appointment cancellation:** applies cancellation through the domain model rather than changing the status directly in the service.
-- **Overlap detection:** checks whether a scheduled appointment intersects the requested time interval.
-- **Concurrency protection:** uses a booking-lock abstraction inside a database transaction before checking and creating a booking.
-- **Consistent result handling:** application services return `Result` / `Result<T>` values for expected business failures.
-- **Time-zone-aware scheduling:** converts between UTC and the configured business time zone.
-
-## Technology Stack
-
-The following technologies and patterns are visible in the implementation shared for this project.
-
-| Area | Technology / Approach |
+| Category | Technologies |
 |---|---|
+| Framework | ASP.NET Core Web API (.NET 9) |
 | Language | C# |
-| Backend | ASP.NET Core |
 | ORM | Entity Framework Core |
-| Database | SQL Server (the booking lock work was discussed as SQL Server-specific) |
+| Database | SQL Server |
 | Architecture | Onion Architecture |
-| Application services | Service abstractions and implementations |
-| Data access | Repository Pattern and Unit of Work |
-| Object mapping | AutoMapper |
-| Error handling | Result Pattern |
-| Time handling | `DateTimeOffset`, `TimeZoneInfo`, `TimeProvider` |
-| Concurrency | Transaction + `IBookingLockProvider` abstraction |
-| API documentation | Swagger / OpenAPI |
+| Mapping | AutoMapper |
+| Logging | Serilog, ILogger |
+| Log Monitoring | Serilog UI |
+| Validation | FluentValidation |
+| API Documentation | Swagger / OpenAPI |
+| Localization | IStringLocalizer |
+| Configuration | Options Pattern |
+| Concurrency | Booking Lock Provider |
+| Performance | Pagination, AsNoTracking, Indexing |
+| Database Access | Repository & Unit of Work |
 
-Package versions and exact framework/database versions should be added from the project files.
+## Architecture & Design Decisions
 
-## Architecture
+### Onion Architecture
 
-The project follows the Onion Architecture direction: the domain model is kept at the center, while application and infrastructure concerns depend inward on abstractions.
+The application follows Onion Architecture to separate responsibilities and keep business logic independent of external infrastructure concerns.
 
-```mermaid
-flowchart TB
-    Client["API Client"]
-    API["API Layer<br/>Controllers / Endpoints"]
-    Service["Core / Service<br/>Application Services"]
-    Domain["Core / Domain<br/>Entities, Domain Rules, Results"]
-    Infrastructure["Infrastructure<br/>EF Core, Repositories, Unit of Work, Booking Lock"]
-    Database[("SQL Server")]
+The solution is organized into the following layers:
 
-    Client --> API
-    API --> Service
-    Service --> Domain
-    Service --> Infrastructure
-    Infrastructure --> Domain
-    Infrastructure --> Database
+- **Domain:** Contains core business entities, rich domain models, business rules, domain errors, and enums.
+- **Service:** Contains application business logic, service abstractions, DTO mapping, and orchestration of domain operations.
+- **Infrastructure:** Handles database access, Entity Framework Core configurations, repositories, Unit of Work, and booking lock implementation.
+- **API:** Exposes REST endpoints through controllers and handles HTTP concerns, middleware, and API response formatting.
+- **Shared:** Contains shared DTOs, constants, enums, exceptions, and common response models.
+
+### Repository & Unit of Work Patterns
+
+The Repository Pattern abstracts database access and provides a consistent way to retrieve and manipulate entities.
+
+The Unit of Work Pattern coordinates repository operations and database transactions, ensuring that related changes are committed or rolled back together.
+
+### Rich Domain Models
+
+Business rules are encapsulated inside domain entities rather than being scattered across services.
+
+For example, the `Appointment` entity controls its own creation and cancellation through domain methods. This ensures that appointment state transitions are validated within the domain itself.
+
+### Result Pattern
+
+The Result Pattern is used to represent successful and failed business operations without relying on exceptions for expected business scenarios.
+
+Services return `Result<T>` containing either the expected data or a domain/application error.
+
+This provides:
+
+- Explicit success and failure handling.
+- Centralized error definitions.
+- Separation between business errors and unexpected exceptions.
+- Consistent error handling across services.
+
+### Service Layer & IQueryable
+
+Business operations are implemented in dedicated services, keeping controllers focused on HTTP request handling and response generation.
+
+`IQueryable` is used within the Service Layer for database-side filtering, sorting, counting, and pagination.
+
+Although exposing `IQueryable` through repository abstractions introduces some coupling to the underlying LINQ query provider (EF Core in this implementation), this was an intentional trade-off for a relatively small application with a fixed database provider.
+
+It allows queries to be translated and executed directly by the database instead of loading unnecessary records into application memory.
+
+The repository abstraction still keeps the infrastructure implementation outside the Domain layer.
+
+### AutoMapper
+
+AutoMapper is used to map domain entities to response DTOs, reducing repetitive mapping code and keeping API contracts separate from domain models.
+
+## Key Features & Technical Implementations
+
+### 1. Appointment Booking & Overlap Prevention
+
+The booking workflow validates appointments before persisting them.
+
+Implemented business rules include:
+
+- Reject appointments scheduled in the past.
+- Validate appointment duration (15–120 minutes).
+- Ensure appointments fall within configured working hours.
+- Verify that the assigned employee exists and is active.
+- Prevent overlapping active appointments for the same employee.
+
+The overlap condition is based on:
+
+`Existing.StartAt < New.EndAt && Existing.EndAt > New.StartAt`
+
+This handles partial overlaps, fully contained appointments, and appointments that contain existing bookings, while allowing adjacent appointments without conflicts.
+
+### 2. Concurrency Control & Booking Locks
+
+Preventing double booking requires more than checking whether an overlapping appointment already exists.
+
+Two concurrent requests could both check availability before either request commits its booking.
+
+To address this, a Booking Lock Provider is used to coordinate booking operations for the same employee and appointment date.
+
+The booking workflow:
+
+1. Begins a database transaction.
+2. Acquires a lock for the employee and appointment date.
+3. Checks employee availability and existing appointments.
+4. Creates the appointment if no conflict exists.
+5. Saves changes and commits the transaction.
+6. Releases transactional resources through the lock provider's lifecycle.
+
+The same locking strategy is applied during cancellation to prevent booking and cancellation operations from racing against each other.
+
+### 3. Availability & Scheduling
+
+Available slots are generated dynamically based on:
+
+- Configured working hours.
+- Employee's existing scheduled appointments.
+- Requested appointment duration.
+- Configurable slot interval.
+- Current time.
+
+The system retrieves existing appointments from the database and calculates available slots without generating unnecessary database queries for every individual time slot.
+
+Employee schedules support pagination to avoid returning an unnecessarily large result set.
+
+### 4. Appointment Cancellation
+
+Appointments are cancelled through domain-level state transitions.
+
+Cancelled appointments are excluded from overlap validation and availability calculations, immediately making their time slots available for future bookings.
+
+### 5. Employee Management
+
+The Employee Service provides:
+
+- Create employee.
+- Retrieve employee by ID.
+- Retrieve employees with pagination.
+- Update employee information.
+- Deactivate employees.
+
+Inactive employees cannot receive new appointments.
+
+### 6. Performance Optimization
+
+Several database and application-level optimizations are applied:
+
+- **AsNoTracking:** Used for read-only queries to reduce Entity Framework Core change-tracking overhead.
+- **Pagination:** Limits the number of records retrieved per request.
+- **Database-side Filtering:** Uses IQueryable to execute filtering, sorting, and pagination at the database level.
+- **Projection:** Retrieves only the required data when using projection-based queries.
+- **Indexes:** Added to frequently queried columns to improve lookup and filtering performance.
+- **Async Database Operations:** Uses asynchronous EF Core operations to avoid blocking request threads.
+- **CancellationToken:** Propagated through asynchronous service and database operations to support request cancellation.
+
+### 7. Unified API Responses
+
+The API uses a consistent response structure through a centralized `ApiResponseFactory`.
+
+Responses provide a unified contract containing:
+
+- Success status.
+- Response message.
+- Returned data.
+- Metadata.
+- Pagination information when applicable.
+- Trace ID for request correlation.
+
+This makes API responses predictable and easier to consume and troubleshoot.
+
+### 8. Centralized Exception Handling
+
+A global exception-handling middleware handles unexpected application exceptions.
+
+Expected business failures are represented through the Result Pattern and mapped to appropriate HTTP responses.
+
+This avoids duplicating exception-handling logic across controllers and keeps HTTP error responses consistent.
+
+### 9. Logging & Monitoring
+
+The application uses **Serilog** for structured logging, alongside `ILogger<T>` for dependency-injected logging throughout the application.
+
+Serilog UI is integrated to provide a centralized interface for inspecting application logs.
+
+An authentication filter protects the logging dashboard from unauthorized access.
+
+Logs include relevant contextual information such as employee IDs, appointment IDs, and booking timestamps to make troubleshooting easier.
+
+### 10. Security & Request Protection
+
+The API includes additional middleware and request protection mechanisms:
+
+- **IP Security Middleware:** Provides IP-based request security checks.
+- **Rate Limiting:** Restricts excessive incoming requests to reduce abuse and protect application resources.
+- **Logging:** Records relevant security and operational events.
+
+These measures provide an additional layer of protection around the API endpoints.
+
+### 11. Configuration & Options Pattern
+
+Application behavior is configured through strongly typed settings using the Options Pattern.
+
+Booking-related configuration is encapsulated in `BookingSettings`, rather than scattering hardcoded values throughout the application.
+
+This includes:
+
+- Working start time.
+- Working end time.
+- Slot generation interval.
+- Business time zone.
+
+The configuration is injected into services through `IOptions<BookingSettings>`.
+
+### 12. Localization
+
+`IStringLocalizer` is used to support localized application messages and provide a centralized approach to handling user-facing text.
+
+## Business Assumptions & Design Decisions
+
+The assessment requirements leave some operational details open to interpretation. The following assumptions were made to establish consistent booking behavior.
+
+### Working Hours
+
+Working hours are assumed to be shared across all employees rather than individually configurable.
+
+The default working schedule is:
+
+- Start: 09:00 AM.
+- End: 05:00 PM.
+
+These values are configurable through `BookingSettings`.
+
+### Time Zone Handling
+
+All appointment timestamps are stored and compared in UTC to maintain consistency and avoid ambiguity when handling timestamps from different time zones.
+
+However, business scheduling rules are evaluated using the configured business time zone.
+
+The application uses `Africa/Cairo` as its default business time zone.
+
+For example, if the working hours are configured as 09:00–17:00 in Cairo, the system converts those local boundaries to UTC before querying the database.
+
+This means that working hours remain consistent with the company's local operating schedule, regardless of the UTC offset at a particular date.
+
+### Slot Interval vs. Appointment Duration
+
+The slot interval and appointment duration represent two different concepts.
+
+- **Appointment Duration:** Determines how long an individual booking occupies an employee's schedule. The customer selects a duration between 15 and 120 minutes.
+- **Slot Interval:** Determines how frequently the system generates potential appointment start times.
+
+For example, with a 15-minute slot interval and a 60-minute appointment duration, the system can generate start times such as:
+
+09:00, 09:15, 09:30, 09:45, 10:00.
+
+Each generated slot occupies 60 minutes.
+
+The interval is a scheduling granularity, not the duration of the appointment.
+
+The slot interval is configurable and can be adjusted according to business requirements.
+
+### Employee Scheduling
+
+Employees are assumed to share the same standard working hours.
+
+The system does not currently support individual employee shifts, breaks, holidays, or custom availability schedules.
+
+### Appointment Status
+
+Only appointments with the `Scheduled` status are considered active for overlap validation and availability calculations.
+
+Cancelled appointments do not block time slots.
+
+### Employee Lifecycle
+
+Employees are deactivated instead of permanently deleted to preserve historical appointment references and maintain data consistency.
+
+### Data Model
+
+The initial database design consists of two primary entities:
+
+- `Employee`
+- `Appointment`
+
+An employee can have multiple appointments, while each appointment is assigned to exactly one employee.
+
+### Authentication & Authorization
+
+Authentication and authorization were not implemented because they were explicitly excluded from the assessment requirements.
+
+The logging dashboard is separately protected through an authentication filter.
+
+### Employee Seeding
+
+The database initialization and seeding infrastructure is prepared, but employee seed data has not been implemented.
+
+Employees can be created through the Employee Management endpoints.
+
+## Project Setup
+
+### Prerequisites
+
+- .NET 9 SDK.
+- SQL Server.
+- Visual Studio 2022 or a compatible IDE.
+- EF Core CLI tools.
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd AppointmentBookingSystem
 ```
 
-### Main responsibilities
+### 2. Configure the Connection String
 
-| Layer | Responsibility |
+Update the connection string in `appsettings.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=.;Database=AppointmentBookingDb;Trusted_Connection=True;TrustServerCertificate=True"
+  }
+}
+```
+
+Adjust the connection string according to your SQL Server configuration.
+
+### 3. Configure Booking Settings
+
+Update the booking configuration:
+
+```json
+{
+  "BookingSettings": {
+    "WorkingStart": "09:00",
+    "WorkingEnd": "17:00",
+    "SlotIntervalMinutes": 15,
+    "TimeZone": "Africa/Cairo"
+  }
+}
+```
+
+### 4. Apply Database Migrations
+
+```bash
+dotnet ef database update
+```
+
+Make sure to execute the command against the project containing the EF Core migrations and configure the appropriate startup project if required.
+
+### 5. Run the Application
+
+```bash
+dotnet run
+```
+
+### 6. Explore the API
+
+Once the application is running, navigate to the Swagger endpoint to explore and test the available API operations.
+
+## API Documentation
+
+The API exposes endpoints for:
+
+| Resource | Operations |
 |---|---|
-| API | Receives HTTP requests, invokes application services, and translates results into HTTP responses. |
-| Core / Service | Coordinates use cases such as creating, listing, and cancelling appointments. |
-| Core / Domain | Holds business entities, domain behavior, and business errors. |
-| Infrastructure | Implements persistence, repository/unit-of-work behavior, transactions, and the booking-lock provider. |
-| Database | Persists employees and appointments. |
+| Employees | Create, Get By ID, Get All, Update, Deactivate |
+| Appointments | Create, Cancel |
+| Availability | Get Available Slots |
+| Employee Schedule | Get Daily Schedule |
 
-The exact folder and project names should be aligned with the actual solution structure.
+Swagger/OpenAPI provides interactive API documentation and request testing.
 
-## Rich Domain Model Design
+## Project Scope & Future Improvements
 
-The project follows the Rich Domain Model approach instead of treating entities as simple data containers.
+The current implementation focuses on the assessment requirements and the core appointment scheduling lifecycle.
 
-Domain entities encapsulate their own business rules and state transitions, keeping the domain logic close to the data it protects.
+Potential future improvements include:
 
-For example, the `Appointment` entity is responsible for managing its lifecycle through domain methods such as `Cancel()`. This ensures that an appointment cannot transition to an invalid state, regardless of which application service invokes the operation.
+- Individual employee working schedules.
+- Employee breaks, holidays, and time-off management.
+- Automated employee seed data.
+- Integration and concurrency testing.
+- Distributed booking locks for multi-instance deployments.
+- Authentication and role-based authorization.
+- Automated notifications for appointment creation and cancellation.
 
-### Key Principles
+## Final Notes
 
-- **Encapsulation:** Entity properties use private setters to prevent uncontrolled state modifications.
-- **Business Invariants:** Rules that protect an entity's valid state are enforced within the domain model.
-- **Controlled State Transitions:** Changes to entity state happen through explicit domain methods.
-- **Separation of Concerns:** Application services coordinate use cases and external dependencies, while entities protect domain-specific rules.
+This project was developed as a practical technical assessment following a technical interview, with the goal of demonstrating backend engineering fundamentals, architectural separation, business rule enforcement, database consistency, and practical performance considerations.
 
-This keeps business rules centralized and makes the domain model more consistent and easier to maintain.
-
-## Booking Workflow
-
-The creation flow validates the requested time before entering the transaction. It then acquires the employee/date booking lock, checks the employee and existing appointments, creates the domain entity, saves the changes, and commits.
-
-```mermaid
-flowchart TD
-    A["Create appointment request"] --> B["Normalize requested start time to UTC"]
-    B --> C{"Is start time in the future?"}
-    C -- No --> X1["Return BookingInPast"]
-    C -- Yes --> D["Convert start/end to business time zone"]
-    D --> E{"Within working hours<br/>and same business date?"}
-    E -- No --> X2["Return OutsideWorkingHours"]
-    E -- Yes --> F["Begin database transaction"]
-    F --> G["Acquire lock for employee + appointment date"]
-    G --> H{"Lock acquired?"}
-    H -- No --> X3["Rollback and return lock error"]
-    H -- Yes --> I["Load employee"]
-    I --> J{"Employee exists and is active?"}
-    J -- No --> X4["Rollback and return employee error"]
-    J -- Yes --> K["Check for overlapping scheduled appointments"]
-    K --> L{"Overlap found?"}
-    L -- Yes --> X5["Rollback and return TimeSlotUnavailable"]
-    L -- No --> M["Create Appointment through domain factory"]
-    M --> N{"Domain creation succeeded?"}
-    N -- No --> X6["Rollback and return domain error"]
-    N -- Yes --> O["Add appointment and save changes"]
-    O --> P["Commit transaction"]
-    P --> Q["Map entity to AppointmentResponse"]
-```
-
-## Concurrency and Double Booking
-
-Checking for an overlapping appointment is not enough by itself when multiple requests can arrive at nearly the same time.
-
-For example:
-
-1. Request A checks a time slot and finds no appointment.
-2. Request B checks the same slot and also finds no appointment.
-3. Both requests attempt to create an appointment.
-
-Without coordination, both requests could pass the overlap check.
-
-The current creation flow addresses this by:
-
-1. Starting a database transaction.
-2. Acquiring a booking lock using the employee ID and the appointment's business-local date.
-3. Checking for overlapping scheduled appointments while the lock is held.
-4. Saving and committing the appointment before the transaction ends.
-
-The same lock abstraction is also used during cancellation. The cancellation flow re-reads the appointment after acquiring the lock, then applies the domain cancellation operation.
-
-`IBookingLockProvider` is the application-facing abstraction. The exact SQL statement, lock resource format, lock timeout, and lock ownership settings should be documented from its implementation rather than assumed here.
-
-### Overlap rule
-
-Two time intervals overlap when:
-
-```text
-existing.StartAt < requested.EndAt
-AND
-existing.EndAt > requested.StartAt
-```
-
-This allows back-to-back appointments. For example, an appointment ending at 10:30 does not overlap another appointment starting at 10:30.
-
-## Appointment Time Handling
-
-The application distinguishes between:
-
-- **UTC timestamps:** used for storing and comparing appointment instants.
-- **Business-local time:** used to validate working hours and determine the employee's schedule date.
-- **Configured time zone:** defines the local business clock.
-
-The service uses `TimeZoneInfo` to convert between UTC and the configured business time zone. It also uses `TimeProvider` to obtain the current time, which makes time-dependent behavior easier to test.
-
-### Important API contract detail
-
-The create service currently calls `ToUniversalTime()` on the request's `StartAt`. This is safe only when the incoming value has the intended time-zone semantics.
-
-For an instant-based API, send an explicit offset or UTC marker:
-
-```json
-{
-  "startAt": "2026-11-06T08:00:00Z"
-}
-```
-
-or:
-
-```json
-{
-  "startAt": "2026-11-06T10:00:00+02:00"
-}
-```
-
-These two values represent the same instant.
-
-Avoid sending an offset-less timestamp such as:
-
-```json
-{
-  "startAt": "2026-11-06T10:00:00"
-}
-```
-
-An offset-less value does not identify a unique instant. In particular, calling `ToUniversalTime()` on a `DateTime` with `Kind == Unspecified` makes .NET interpret it using the server machine's local time zone, which may differ between development and production.
-
-If the intended contract is instead "the customer chooses a wall-clock time in the business time zone", the API should accept a local date and time and explicitly interpret them using the configured business time zone. Do not mix that contract with an arbitrary client-provided offset.
-
-## Domain Model
-
-The following diagram contains only the relationship and fields that are evident from the service implementation. Additional properties and constraints should be added after checking the actual entities and EF Core configurations.
-
-```mermaid
-erDiagram
-    EMPLOYEE ||--o{ APPOINTMENT : has
-
-    EMPLOYEE {
-        int Id PK
-        bool IsActive
-    }
-
-    APPOINTMENT {
-        long Id PK
-        int EmployeeId FK
-        string CustomerName
-        string PhoneNumber
-        datetimeoffset StartAt
-        datetimeoffset EndAt
-        AppointmentStatus Status
-    }
-```
-
-### Appointment lifecycle
-
-The service queries appointments with `Scheduled` status when checking conflicts, generating available slots, and retrieving the employee's schedule.
-
-Cancellation is performed through the domain method `Appointment.Cancel(...)`. The exact allowed state transitions and cancellation rules belong to the domain implementation and are not inferred here.
-
-## Application Services
-
-### `CreateAppointmentAsync`
-
-- Converts the requested start time to UTC and calculates the end time from the requested duration.
-- Rejects appointments that start in the past.
-- Converts the interval to the configured business time zone.
-- Rejects appointments that cross a business-local date or fall outside working hours.
-- Starts a transaction and acquires the employee/date booking lock.
-- Checks that the employee exists and is active.
-- Checks for an overlapping scheduled appointment.
-- Creates the appointment through `Appointment.Create(...)`.
-- Saves, commits, and maps the entity to `AppointmentResponse`.
-
-### `GetAvailableSlotsAsync`
-
-- Accepts an employee ID, a date, and a requested duration.
-- Validates that the duration is between 15 and 120 minutes.
-- Checks that the employee exists and is active.
-- Converts the configured working-hours boundaries for the requested date to UTC.
-- Loads scheduled appointments overlapping the working interval.
-- Generates candidate slots using `SlotIntervalMinutes`.
-- Returns only future slots that do not overlap existing scheduled appointments.
-
-### `GetEmployeeScheduleAsync`
-
-- Validates the page number and page size. The current service rejects page sizes greater than 100.
-- Checks that the employee exists.
-- Converts the selected business-local working interval to UTC.
-- Queries scheduled appointments whose start time falls within that interval.
-- Counts the matching records, orders by start time, and applies `Skip` / `Take`.
-- Maps the entities to `EmployeeAppointmentResponse` and returns a `PagedResult`.
-
-### `CancelAppointmentAsync`
-
-- Starts a transaction and loads the appointment.
-- Converts its start time to the business time zone to determine the appointment date.
-- Acquires the employee/date booking lock.
-- Re-reads the appointment after acquiring the lock.
-- Calls `Appointment.Cancel(...)` using the current UTC time from `TimeProvider`.
-- Saves and commits if the domain operation succeeds.
-
-## Booking Configuration
-
-The service reads `BookingSettings` through `IOptions<BookingSettings>`.
-
-| Setting | Purpose |
-|---|---|
-| `WorkingStart` | Local business opening time. |
-| `WorkingEnd` | Local business closing time. |
-| `TimeZone` | Business time zone used for scheduling and validation. |
-| `SlotIntervalMinutes` | Step used when generating candidate available slots. |
-
-The exact configuration values and their source (for example, `appsettings.json` or environment variables) should be copied from the application configuration.
-
-## API Capabilities
-
-The application service layer supports the following operations. Exact HTTP routes, verbs, status codes, and query parameter names should be copied from the actual controllers/endpoints.
-
-| Operation | Inputs | Output |
-|---|---|---|
-| Create appointment | Customer details, employee ID, start time, duration | `AppointmentResponse` |
-| Get available slots | Employee ID, date, duration | List of `AvailableSlotResponse` |
-| Get employee schedule | Employee ID, date, page number, page size | `PagedResult<EmployeeAppointmentResponse>` |
-| Cancel appointment | Appointment ID (`long`) | Result indicating success or failure |
-
-## Error Handling
-
-Expected business failures are represented using the Result Pattern instead of being treated as unexpected exceptions.
-
-Examples of failure conditions visible in the service implementation include:
-
-- Booking starts in the past.
-- Requested time is outside working hours.
-- Requested duration is outside the accepted range.
-- Employee does not exist.
-- Employee is inactive.
-- Requested interval overlaps an existing scheduled appointment.
-- Booking lock cannot be acquired.
-- Pagination parameters are invalid.
-- Appointment does not exist or cannot be cancelled according to its domain rules.
-
-The API layer is responsible for translating application results into HTTP responses. The exact error codes and response envelope should be documented from the shared API response and result-to-HTTP mapping implementation.
-
-### Logging Dashboard with Serilog UI
-
-The project integrates **Serilog UI** to provide a centralized dashboard for inspecting and monitoring application logs stored in a PostgreSQL database.
-
-It simplifies troubleshooting by providing a web-based interface where developers can browse and inspect log events without manually querying the logging database.
-
-**Key Features:**
-
-- **PostgreSQL Integration:** Stores application logs in a dedicated PostgreSQL database table.
-- **Centralized Log Inspection:** Provides a dashboard for browsing and investigating logged events.
-- **Custom Authorization:** Implements a custom authorization filter using Basic Authentication to restrict access to the logging dashboard.
-- **Configuration-Based Credentials:** Keeps dashboard credentials in application configuration instead of hardcoding them into the authorization logic.
-
-**Dashboard Endpoint:**
-
-```http
-/serilog-ui
-```
-
-**Architecture Overview:**
-
-```text
-Application
-    |
-    v
-Serilog Logging
-    |
-    v
-PostgreSQL Log Storage
-    |
-    v
-Serilog UI Dashboard
-    |
-    v
-Custom Authorization Filter
-    |
-    v
-Log Inspection Interface
-```
-
-### Logging Dashboard with Serilog UI
-
-The project integrates **Serilog UI** to provide a centralized dashboard for inspecting and monitoring application logs stored in a PostgreSQL database.
-
-It simplifies troubleshooting by providing a web-based interface where developers can browse and inspect log events without manually querying the logging database.
-
-**Key Features:**
-
-- **SQL Server Integration:** Stores application logs in a dedicated SQL Server database table.
-- **Centralized Log Inspection:** Provides a dashboard for browsing and investigating logged events.
-- **Custom Authorization:** Implements a custom authorization filter using Basic Authentication to restrict access to the logging dashboard.
-- **Configuration-Based Credentials:** Keeps dashboard credentials in application configuration instead of hardcoding them into the authorization logic.
-- **Access:** baseUrl/serilog-ui
-
-**Dashboard Endpoint:**
-
-```http
-/serilog-ui
-```
-
-**Architecture Overview:**
-
-```text
-Application
-    |
-    v
-Serilog Logging
-    |
-    v
-PostgreSQL Log Storage
-    |
-    v
-Serilog UI Dashboard
-    |
-    v
-Custom Authorization Filter
-    |
-    v
-Log Inspection Interface
-```
-
-## Running the Project
-
-The exact setup commands and required configuration keys were not present in the available source material. Use the following checklist when preparing the project locally:
-
-1. Install the .NET SDK version targeted by the solution.
-2. Configure the SQL Server connection string.
-3. Configure the booking working hours and business time zone.
-4. Configure the booking lock provider's database requirements.
-5. Apply the Entity Framework Core migrations.
-6. Run the API project.
-7. Open the Swagger UI route configured by the application.
-
-Do not commit real credentials or production connection strings. Use user secrets or environment variables for sensitive configuration.
-
-## Important Implementation Notes
-
-Before treating this README as the final technical reference, verify these items against the repository:
-
-- [ ] Exact solution and project names and dependency direction.
-- [ ] Actual `Employee` and `Appointment` properties and navigation properties.
-- [ ] EF Core indexes, check constraints, delete behavior, and migration details.
-- [ ] `IBookingLockProvider` implementation, SQL command, resource key, timeout, and lock ownership.
-- [ ] DTO property types, especially the type and expected semantics of `StartAt`.
-- [ ] Actual controller/endpoint routes, HTTP methods, and status codes.
-- [ ] API response envelope and Result-to-HTTP mapping.
-- [ ] Exception handling and validation pipeline.
-- [ ] Exact .NET, EF Core, and SQL Server versions.
-- [ ] Real configuration keys and safe local run instructions.
-
----
-
-**Design principle:** availability checks are advisory; appointment creation must re-check availability while holding the booking lock. The database write is the point at which the booking is committed.
+The implementation prioritizes clear business logic, maintainable code, and reliable appointment scheduling rather than unnecessary architectural complexity.
