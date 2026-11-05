@@ -4,6 +4,7 @@
     using Domain.Contracts;
     using Domain.Models;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Logging;
     using ServiceAbstraction;
     using Shared;
     using Shared.DTOs.Employee;
@@ -11,7 +12,8 @@
 
     public sealed class EmployeeService(
         IUnitOfWork unitOfWork,
-        IMapper mapper) : IEmployeeService
+        IMapper mapper,
+        ILogger<EmployeeService> logger) : IEmployeeService
     {
         public async Task<Result<EmployeeResponse>> CreateAsync(
             CreateEmployeeRequest request,
@@ -31,6 +33,12 @@
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             var response = mapper.Map<EmployeeResponse>(employee);
+
+            logger.LogInformation(
+                "Created new employee with ID {Id}, Name {Name}, and Phone Number {PhoneNumber}.",
+                employee.Id,
+                employee.Name,
+                employee.PhoneNumber);
 
             return Result<EmployeeResponse>.Success(response);
         }
@@ -100,6 +108,12 @@
 
             var response = mapper.Map<EmployeeResponse>(employee);
 
+            logger.LogInformation(
+                "Updated employee with ID {Id}. New Name: {Name}, New Phone Number: {PhoneNumber}.",
+                employee.Id,
+                employee.Name,
+                employee.PhoneNumber);
+
             return Result<EmployeeResponse>.Success(response);
         }
 
@@ -119,6 +133,10 @@
             employee.Deactivate();
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Deactivated employee with ID {Id}.",
+                employee.Id);
 
             return Result.Success();
         }

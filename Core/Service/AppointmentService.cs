@@ -2,6 +2,7 @@
 using Domain.Contracts;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ServiceAbstraction;
 using Shared;
@@ -15,7 +16,8 @@ namespace Service
         IBookingLockProvider bookingLockProvider,
         IMapper mapper,
         TimeProvider timeProvider,
-        IOptions<BookingSettings> settings)
+        IOptions<BookingSettings> settings,
+        ILogger<AppointmentService> logger)
         : IAppointmentService
     {
         private readonly BookingSettings _settings = settings.Value;
@@ -114,6 +116,12 @@ namespace Service
                 await appointmentRepository.AddAsync(appointment);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
+
+                logger.LogInformation(
+                    "Creating appointment for Employee {EmployeeId} at {StartAt} with duration {DurationInMinutes} minutes.",
+                    request.EmployeeId,
+                    request.StartAt,
+                    request.DurationInMinutes);
 
                 return mapper.Map<AppointmentResponse>(appointment);
             }
@@ -318,6 +326,12 @@ namespace Service
 
                 await unitOfWork.SaveChangesAsync(cancellationToken);
                 await unitOfWork.CommitTransactionAsync(cancellationToken);
+
+                logger.LogInformation(
+                    "Cancelling appointment {AppointmentId} for Employee {EmployeeId} scheduled at {StartAt}.",
+                    appointment.Id,
+                    appointment.EmployeeId,
+                    appointment.StartAt);
 
                 return Result.Success();
             }
